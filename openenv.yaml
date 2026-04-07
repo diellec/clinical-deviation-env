@@ -1,6 +1,27 @@
 name: clinical-deviation-env
 version: "0.1.0"
-description: "OpenEnv-style environment for clinical workflow deviation handling in sample collection and processing"
+description: "OpenEnv-compatible environment for handling clinical study workflow deviations in sample collection, separation, and storage."
 
 action: ActionInput
-observation: StepResponse
+observation: Observation
+reward: float
+
+tasks:
+  - id: timing_deviation
+    difficulty: easy
+    description: "Blood collection occurred outside protocol tolerance and must be assessed, safeguarded, documented, and closed correctly."
+
+  - id: sample_mismatch
+    difficulty: medium
+    description: "A scanned child sample does not match the selected parent sample during separation and traceability must be restored before closure."
+
+  - id: hemolyzed_sample
+    difficulty: hard
+    description: "A hemolyzed sample is pending storage and requires hold, review, disposition, and correct closure."
+
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
+  grader: /grader
+  tasks: /tasks

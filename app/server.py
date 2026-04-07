@@ -1,18 +1,19 @@
+from typing import Optional
+
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional
 
 from app.env import ClinicalEnv
 from app.tasks import TASKS
 from app.grader import grade_episode
 from app.models import ActionInput
 
-app = FastAPI()
+app = FastAPI(title="Clinical Deviation Environment")
 env = ClinicalEnv()
 
 
 class ResetInput(BaseModel):
-    case_type: Optional[str] = "timing_deviation"
+    task_id: Optional[str] = "timing_deviation"
 
 
 @app.get("/")
@@ -22,12 +23,14 @@ def root():
 
 @app.get("/tasks")
 def get_tasks():
-    return {"tasks": TASKS}
+    return {
+        "tasks": list(TASKS.values())
+    }
 
 
 @app.post("/reset")
 def reset(reset_input: ResetInput = ResetInput()):
-    return env.reset(case_type=reset_input.case_type)
+    return env.reset(case_type=reset_input.task_id)
 
 
 @app.get("/state")

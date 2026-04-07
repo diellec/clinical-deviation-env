@@ -5,33 +5,43 @@ from app.grader import grade_episode
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "baseline-deterministic")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 TASK_NAME = os.getenv("TASK_NAME", "all_tasks")
 BENCHMARK = os.getenv("BENCHMARK", "clinical_deviation_env")
+
+if not HF_TOKEN:
+    raise EnvironmentError("HF_TOKEN environment variable is required.")
 
 
 BASELINE_POLICIES = {
     "timing_deviation": [
         "inspect_case",
+        "review_protocol",
         "flag_deviation",
+        "place_hold",
         "request_reason",
-        "hold_processing",
-        "close_case"
+        "record_reason:late_arrival",
+        "close_case",
     ],
     "sample_mismatch": [
         "inspect_case",
-        "flag_mismatch",
+        "review_protocol",
+        "flag_deviation",
         "block_separation",
-        "request_correct_child",
-        "close_case"
+        "request_rescan",
+        "record_disposition:traceability_restored",
+        "close_case",
     ],
     "hemolyzed_sample": [
         "inspect_case",
-        "flag_quality_issue",
-        "hold_storage",
+        "review_protocol",
+        "flag_deviation",
+        "place_hold",
         "request_supervisor_review",
-        "close_case"
-    ]
+        "record_disposition:reject_sample",
+        "close_case",
+    ],
 }
 
 
@@ -56,23 +66,23 @@ def log_end(success: bool, steps: int, score: float, rewards) -> None:
     )
 
 
-def run_case(env: ClinicalEnv, case_type: str):
+def run_case(env: ClinicalEnv, task_id: str):
     rewards = []
     steps_taken = 0
     success = False
     score = 0.0
 
-    log_start(task=case_type, env=BENCHMARK, model=MODEL_NAME)
+    log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
 
     try:
-        env.reset(case_type=case_type)
+        env.reset(case_type=task_id)
 
-        for step_num, action in enumerate(BASELINE_POLICIES[case_type], start=1):
+        for step_num, action in enumerate(BASELINE_POLICIES[task_id], start=1):
             result = env.step(action)
 
             reward = float(result.get("reward", 0.0))
             done = bool(result.get("done", False))
-            error = result.get("error", None)
+            error = result.get("observation", {}).get("last_action_error")
 
             rewards.append(reward)
             steps_taken = step_num
@@ -90,7 +100,7 @@ def run_case(env: ClinicalEnv, case_type: str):
 
         final_grade = grade_episode(env.state)
         score = max(0.0, min(1.0, float(final_grade["score"])))
-        success = score >= 0.99
+        success = bool(final_grade.get("success", False))
 
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
@@ -98,8 +108,15 @@ def run_case(env: ClinicalEnv, case_type: str):
 
 def main():
     env = ClinicalEnv()
-    for case_type in BASELINE_POLICIES:
-        run_case(env, case_type)
+
+    if TASK_NAME != "all_tasks":
+        if TASK_NAME not in BASELINE_POLICIES:
+            raise ValueError(f"Unknown TASK_NAME: {TASK_NAME}")
+        run_case(env, TASK_NAME)
+        return
+
+    for task_id in BASELINE_POLICIES:
+        run_case(env, task_id)
 
 
 if __name__ == "__main__":
