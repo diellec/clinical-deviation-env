@@ -1,3 +1,11 @@
+---
+title: Clinical Deviation Environment
+emoji: 🧪
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 # Clinical Deviation Environment
 
 A lightweight OpenEnv-style environment for handling structured clinical workflow deviations in sample collection and processing.
