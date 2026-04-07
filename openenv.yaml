@@ -1,0 +1,6 @@
+name: clinical-deviation-env
+version: "0.1.0"
+description: "OpenEnv-style environment for clinical workflow deviation handling in sample collection and processing"
+
+action: ActionInput
+observation: StepResponse
