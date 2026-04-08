@@ -1,6 +1,14 @@
 from copy import deepcopy
 
 
+def bounded_score(score: float, eps: float = 0.01) -> float:
+    if score <= eps:
+        return eps
+    if score >= 1.0 - eps:
+        return 1.0 - eps
+    return float(score)
+
+
 def grade_episode(state):
     task_id = state.get("task_id")
     grader = state.get("grader", {})
@@ -42,7 +50,8 @@ def grade_episode(state):
     if grader.get("unsafe_action_taken"):
         penalties += 0.40
 
-    final_score = max(0.0, min(1.0, score - penalties))
+    raw_score = score - penalties
+    final_score = bounded_score(raw_score)
 
     return {
         "task_id": task_id,

@@ -65,11 +65,23 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
         flush=True,
     )
 
-
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+
+    # Keep printed score strictly within (0, 1)
+    if score <= 0.0:
+        safe_score = 0.01
+    elif score >= 1.0:
+        safe_score = 0.99
+    else:
+        safe_score = round(score, 2)
+        if safe_score <= 0.0:
+            safe_score = 0.01
+        elif safe_score >= 1.0:
+            safe_score = 0.99
+
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={safe_score:.2f} rewards={rewards_str}",
         flush=True,
     )
 

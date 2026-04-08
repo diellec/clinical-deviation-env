@@ -1,6 +1,14 @@
 from copy import deepcopy
 
 
+def bounded_score(score: float, eps: float = 0.01) -> float:
+    if score <= eps:
+        return eps
+    if score >= 1.0 - eps:
+        return 1.0 - eps
+    return float(score)
+
+
 class ClinicalEnv:
     def __init__(self):
         self.state = None
@@ -17,7 +25,7 @@ class ClinicalEnv:
             "status": self.state["status"],
             "done": self.state["done"],
             "steps_taken": self.state["steps_taken"],
-            "score": round(self.state["score"], 2),
+            "score": round(bounded_score(self.state["score"]), 2),
             "observation": self._build_observation(),
             "grader_progress": deepcopy(self.state["grader"]),
         }
@@ -75,7 +83,8 @@ class ClinicalEnv:
                 "Maximum step limit reached before correct resolution."
             )
 
-        self.state["score"] = max(0.0, min(1.0, self.state["score"] + reward))
+        updated_score = self.state["score"] + reward
+        self.state["score"] = bounded_score(updated_score)
         self.state["last_reward"] = round(reward, 2)
 
         return {
@@ -83,7 +92,7 @@ class ClinicalEnv:
             "reward": round(reward, 2),
             "done": self.state["done"],
             "message": self.state["last_action_message"],
-            "score": round(self.state["score"], 2),
+            "score": round(bounded_score(self.state["score"]), 2),
             "grader_progress": deepcopy(self.state["grader"]),
         }
 
@@ -98,7 +107,7 @@ class ClinicalEnv:
             "done": False,
             "step_count": 0,
             "steps_taken": [],
-            "score": 0.0,
+            "score": 0.01,
             "last_action_error": None,
             "last_action_message": "",
             "last_reward": 0.0,
