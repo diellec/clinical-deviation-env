@@ -5,3 +5,6 @@ echo *.pyc >> .gitignore
 echo .vscode/ >> .gitignore
 echo *.pyo >> .gitignore
 echo *.pyd >> .gitignore
+venv/
+__pycache__/
+*.pyc
